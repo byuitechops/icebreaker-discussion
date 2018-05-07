@@ -9,6 +9,8 @@ module.exports = (course, stepCallback) => {
         4. createIcebreaker() - If one isn't available, creates a new Icebreaker discussion topic and puts a module item in week 01
     */
 
+    var firstWeekModule = {};
+
     function getModule() {
         return new Promise((resolve, reject) => {
             canvas.get(`/api/v1/courses/${course.info.canvasOU}/modules`, (err, canvasModules) => {
@@ -18,6 +20,7 @@ module.exports = (course, stepCallback) => {
                 if (canvasModules.length === 0 || !week01Module) {
                     return reject(new Error('Unable to find a Week 01 module. Unable to create/name Icebreaker discussion topic.'));
                 }
+                firstWeekModule = week01Module;
                 resolve(week01Module);
             });
         });
@@ -67,11 +70,34 @@ module.exports = (course, stepCallback) => {
                     title
                 }, (err, newTopic) => {
                     if (err) return reject(err);
+
                     course.log('Discussion Topics Created', {
                         'ID': newTopic.id,
                         'Title': title
                     });
-                    resolve();
+
+                    canvas.post(`/api/v1/courses/${course.info.canvasOU}/modules/${firstWeekModule.id}/items`, {
+                        'module_item[title]': title,
+                        'module_item[type]': 'Discussion',
+                        'module_item[content_id]': newTopic.id
+                    }, (modErr, newModuleItem) => {
+                        if (modErr) return reject(err);
+
+                        canvas.put(`/api/v1/courses/${course.info.canvasOU}/modules/${firstWeekModule.id}/items/${newModuleItem.id}`, {
+                            'module_item[published]': true
+                        }, (updateErr, updatedModuleItem) => {
+                            if (updateErr) return reject(updateErr);
+
+                            course.log('Module Items Created', {
+                                'ID': updatedModuleItem.id,
+                                'Title': updatedModuleItem.title
+                            });
+
+                            resolve();
+                        });
+
+                    });
+
                 });
             }
         });
