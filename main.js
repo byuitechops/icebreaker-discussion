@@ -51,7 +51,7 @@ module.exports = (course, stepCallback) => {
 
     function createIcebreaker(moduleItem) {
         return new Promise((resolve, reject) => {
-            var title = 'W01 Discussion: Icebreaker';
+            var title = 'Icebreaker';
             if (moduleItem) {
                 // Rename the board
                 canvas.put(`/api/v1/courses/${course.info.canvasOU}/discussion_topics/${moduleItem.content_id}`, {
