@@ -51,7 +51,9 @@ module.exports = (course, stepCallback) => {
 
     function createIcebreaker(moduleItem) {
         return new Promise((resolve, reject) => {
+            var courseCode = course.info.courseCode.replace(/\s/g, '').split(':')[0].toLowerCase();
             var title = 'Icebreaker';
+            var message = `<div class="byui ${courseCode}"></div>`;
             if (moduleItem) {
                 // Rename the board
                 canvas.put(`/api/v1/courses/${course.info.canvasOU}/discussion_topics/${moduleItem.content_id}`, {
@@ -67,7 +69,8 @@ module.exports = (course, stepCallback) => {
             } else {
                 // Create the board
                 canvas.post(`/api/v1/courses/${course.info.canvasOU}/discussion_topics`, {
-                    title
+                    title,
+                    message
                 }, (err, newTopic) => {
                     if (err) return reject(err);
 
@@ -76,6 +79,7 @@ module.exports = (course, stepCallback) => {
                         'Title': title
                     });
 
+                    // Create the module item
                     canvas.post(`/api/v1/courses/${course.info.canvasOU}/modules/${firstWeekModule.id}/items`, {
                         'module_item[title]': title,
                         'module_item[type]': 'Discussion',
@@ -83,6 +87,7 @@ module.exports = (course, stepCallback) => {
                     }, (modErr, newModuleItem) => {
                         if (modErr) return reject(err);
 
+                        // Publish the module item
                         canvas.put(`/api/v1/courses/${course.info.canvasOU}/modules/${firstWeekModule.id}/items/${newModuleItem.id}`, {
                             'module_item[published]': true
                         }, (updateErr, updatedModuleItem) => {
